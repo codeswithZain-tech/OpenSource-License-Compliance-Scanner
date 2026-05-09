@@ -1,7 +1,0 @@
-Django==5.2.14
-djangorestframework
-PyGithub
-python-dotenv
-reportlab
-djangorestframework-simplejwt
-django-cors-headers
