@@ -79,8 +79,6 @@ A professional full-stack application that scans GitHub repositories, detects op
 | npm | 9+ |
 
 ### Backend Setup
-
-```bash
 cd backend
 python -m venv venv
 venv\Scripts\activate          # Windows
@@ -95,14 +93,14 @@ python manage.py runserver
 
 
 ### Frontend Setup
----bash
+
 cd frontend
 npm install
 npm run dev
 
 ###Environment Configuration
 Create .env file in backend folder:
----bash
+
 GITHUB_TOKEN=ghp_your_token_here
 Get GitHub Token: github.com/settings/tokens → Generate new token → Select repo and read:org scopes
 
