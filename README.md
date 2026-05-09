@@ -1,4 +1,3 @@
-````md
 # OpenSource License Compliance Scanner
 
 A professional full-stack web application that scans GitHub repositories, detects open-source licenses, analyzes compliance risks, and generates detailed PDF reports.
