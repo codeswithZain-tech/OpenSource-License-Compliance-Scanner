@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+venv/
+.venv/
+.env
+.env.*
+*.sqlite3
+
+# Django
+/media/
+staticfiles/
+db.sqlite3
+
+# Node
+node_modules/
+/dist/
+/frontend/dist/
+
+# VSCode
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Ignore virtual environments inside backend/frontend
+backend/venv/
+frontend/node_modules/
+
+# IDE files
+.idea/
