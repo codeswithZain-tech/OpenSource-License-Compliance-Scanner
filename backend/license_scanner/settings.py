@@ -26,13 +26,24 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-local-dev-key')
+# In production, SECRET_KEY must be provided via environment variable.
+SECRET_KEY = os.getenv('SECRET_KEY')
+if not SECRET_KEY:
+    raise RuntimeError('SECRET_KEY environment variable is required')
+
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv('DEBUG', 'True') == 'True'
+DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
 # Allow configuring ALLOWED_HOSTS via environment variable (comma-separated)
-ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '127.0.0.1,localhost').split(',')
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '').split(',')
+ALLOWED_HOSTS = [h.strip() for h in ALLOWED_HOSTS if h.strip()]
+if not ALLOWED_HOSTS:
+    # Safe default for local dev; production should set ALLOWED_HOSTS.
+    ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
+
+
+
 
 
 # Application definition
@@ -156,7 +167,7 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-REQUIRE_AUTH = os.getenv('REQUIRE_AUTH', 'False') == 'True'
+REQUIRE_AUTH = os.getenv('REQUIRE_AUTH', 'True') == 'True'
 if REQUIRE_AUTH:
     REST_FRAMEWORK = {
         'DEFAULT_AUTHENTICATION_CLASSES': (
