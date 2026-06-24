@@ -8,7 +8,10 @@ import History from './pages/History';
 import Login from './pages/Login';
 
 // Set axios default config
-axios.defaults.baseURL = 'http://localhost:8000';
+axios.defaults.baseURL = import.meta.env.VITE_API_BASE_URL || '';
+
+// NOTE: In Vercel, set VITE_API_BASE_URL in project env.
+// For same-origin API routing, keep it '' and use vercel rewrites.
 
 function App() {
   const [user, setUser] = useState(null);

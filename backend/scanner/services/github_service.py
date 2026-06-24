@@ -6,11 +6,8 @@ class GitHubService:
     def __init__(self):
         self.token = os.getenv('GITHUB_TOKEN')
         if self.token:
-            # Authenticated client (higher rate limits)
             self.github = Github(self.token)
         else:
-            # No token provided: use unauthenticated client (limited rate)
-            # Allow scanning public repositories without a token; recommend setting GITHUB_TOKEN in env for reliability.
             self.github = Github()
     
     def get_repository(self, repo_url):
@@ -20,37 +17,50 @@ class GitHubService:
     def get_license_info(self, repo):
         """Professional license detection - sab pick karega"""
         
-        # Method 1: GitHub's license API
+        # FIRST: Check COPYING files (Linux-style repos ke liye)
+        copy_files = ['COPYING', 'COPYING.md', 'COPYING.txt']
+        for filename in copy_files:
+            try:
+                content = repo.get_contents(filename).decoded_content.decode('utf-8')
+                result = self._detect_any_license(content)
+                if result.get('key') != 'unknown':
+                    return result
+            except:
+                pass
+        
+        # SECOND: GitHub's license API
         if repo.license:
-            return self._get_license_details(repo.license.spdx_id or repo.license.key)
+            spdx = repo.license.spdx_id or repo.license.key
+            if spdx and spdx.lower() != 'other':
+                return self._get_license_details(spdx)
         
-        # Method 2: Check LICENSE files
-        license_files = ['LICENSE', 'LICENSE.md', 'LICENSE.txt', 'COPYING', 'COPYING.md', 'LICENCE']
-        
+        # THIRD: Check standard LICENSE files
+        license_files = ['LICENSE', 'LICENSE.md', 'LICENSE.txt', 'LICENCE']
         for filename in license_files:
             try:
                 content = repo.get_contents(filename).decoded_content.decode('utf-8')
-                return self._detect_any_license(content)
+                result = self._detect_any_license(content)
+                if result.get('key') != 'unknown':
+                    return result
             except:
                 continue
         
-        # Method 3: Check README for license mention
+        # FOURTH: Check README for SPDX identifier
         try:
             readme = repo.get_contents('README.md')
             readme_content = readme.decoded_content.decode('utf-8')
+            
+            # Look for SPDX-License-Identifier
+            spdx_match = re.search(r'SPDX-License-Identifier:\s*([^\s\n]+)', readme_content, re.IGNORECASE)
+            if spdx_match:
+                return self._get_license_details(spdx_match.group(1))
+            
             if 'proprietary' in readme_content.lower():
                 return self._get_license_details('proprietary')
-            if 'license' in readme_content.lower():
-                if 'mit' in readme_content.lower():
-                    return self._get_license_details('MIT')
-                if 'apache' in readme_content.lower():
-                    return self._get_license_details('Apache-2.0')
-                if 'gpl' in readme_content.lower():
-                    return self._get_license_details('GPL')
         except:
             pass
         
-        # Method 4: Check package files
+        # FIFTH: Check package files
         license_from_package = self._check_package_files(repo)
         if license_from_package:
             return license_from_package
@@ -60,7 +70,6 @@ class GitHubService:
     def _check_package_files(self, repo):
         """Check package.json, setup.py, pyproject.toml, etc."""
         
-        # package.json (Node.js)
         try:
             pkg = repo.get_contents('package.json')
             import json
@@ -70,7 +79,6 @@ class GitHubService:
         except:
             pass
         
-        # setup.py (Python)
         try:
             setup = repo.get_contents('setup.py')
             content = setup.decoded_content.decode('utf-8')
@@ -80,7 +88,6 @@ class GitHubService:
         except:
             pass
         
-        # pyproject.toml (Python modern)
         try:
             toml = repo.get_contents('pyproject.toml')
             content = toml.decoded_content.decode('utf-8')
@@ -95,6 +102,17 @@ class GitHubService:
     def _detect_any_license(self, content):
         """20+ licenses detect karega + custom/proprietary bhi"""
         content_lower = content.lower()
+        
+        # GPL FAMILY - Highest priority
+        if 'gpl' in content_lower or 'gnu general public license' in content_lower:
+            if 'version 3' in content_lower or 'gpl-3.0' in content_lower:
+                return self._get_license_details('GPL-3.0')
+            elif 'version 2' in content_lower or 'gpl-2.0' in content_lower:
+                return self._get_license_details('GPL-2.0')
+            elif 'spdx-license-identifier: gpl-2.0' in content_lower:
+                return self._get_license_details('GPL-2.0')
+            else:
+                return self._get_license_details('GPL')
         
         # PERMISSIVE LICENSES (LOW RISK)
         if 'mit license' in content_lower or 'permission is hereby granted' in content_lower:
@@ -112,15 +130,7 @@ class GitHubService:
         if 'isc license' in content_lower:
             return self._get_license_details('ISC')
         
-        # COPLYLEFT LICENSES (HIGH RISK)
-        if 'gnu general public license' in content_lower or 'gpl' in content_lower:
-            if 'version 3' in content_lower or 'gpl-3.0' in content_lower:
-                return self._get_license_details('GPL-3.0')
-            elif 'version 2' in content_lower or 'gpl-2.0' in content_lower:
-                return self._get_license_details('GPL-2.0')
-            else:
-                return self._get_license_details('GPL')
-        
+        # OTHER COPLYLEFT
         if 'gnu lesser general public license' in content_lower or 'lgpl' in content_lower:
             return self._get_license_details('LGPL-3.0')
         

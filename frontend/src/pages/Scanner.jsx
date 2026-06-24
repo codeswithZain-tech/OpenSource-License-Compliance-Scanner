@@ -9,7 +9,7 @@ const Scanner = () => {
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
 
-  const handleScan = async () => {
+const handleScan = async () => {
     if (!repoUrl.trim()) {
       setError('Please enter a repository URL');
       return;

@@ -1,0 +1,41 @@
+cd Desktop
+mkdir license-scanner-project
+cd license-scanner-project
+mkdir backend
+cd backend
+python -m venv vend
+venv\Scripts\activate
+pip install Django
+django-admin --version
+django-admin startproject license_scanner .
+dir
+python manage.py runserver
+python manage.py migrate
+python manage.py createsuperuser
+//Username: admin
+//Email: admin@example.com
+//Password: admin@123
+//Password (again): admin@123
+
+http://localhost:8000/admin
+login with 
+Username: admin
+Password: admin@123
+
+python manage.py startapp scanner
+
+App Ko Django Mein Register Karna
+File kholo: license_scanner/settings.py
+
+settings.py file kholne ka tareeqa:
+
+
+python manage.py makemigrations
+
+python manage.py migrate
+
+pip install djangorestframework
+
+pip show djangorestframework
+
+pip install django-cors-headers
