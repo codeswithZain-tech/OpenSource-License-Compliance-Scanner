@@ -1,6 +1,7 @@
 from github import Github, GithubException
 import os
 import re
+import json
 
 class GitHubService:
     def __init__(self):
@@ -13,6 +14,68 @@ class GitHubService:
     def get_repository(self, repo_url):
         repo_name = repo_url.replace('https://github.com/', '').replace('.git', '')
         return self.github.get_repo(repo_name)
+    
+    def get_dependencies(self, repo):
+        """Extract dependencies from package.json with their licenses (cached lookup)"""
+        deps = []
+        known_licenses = {
+            'react': ('MIT', 'LOW'), 'react-dom': ('MIT', 'LOW'), 'lodash': ('MIT', 'LOW'),
+            'axios': ('MIT', 'LOW'), 'express': ('MIT', 'LOW'), 'next': ('MIT', 'LOW'),
+            'vue': ('MIT', 'LOW'), 'angular': ('MIT', 'LOW'), 'typescript': ('Apache-2.0', 'LOW'),
+            'webpack': ('MIT', 'LOW'), 'babel': ('MIT', 'LOW'), 'eslint': ('MIT', 'LOW'),
+            'jest': ('MIT', 'LOW'), 'mocha': ('MIT', 'LOW'), 'chai': ('MIT', 'LOW'),
+            'moment': ('MIT', 'LOW'), 'chart.js': ('MIT', 'LOW'), 'd3': ('ISC', 'LOW'),
+            'three': ('MIT', 'LOW'), 'socket.io': ('MIT', 'LOW'), 'gulp': ('MIT', 'LOW'),
+            'grunt': ('MIT', 'LOW'), 'redux': ('MIT', 'LOW'), 'react-router': ('MIT', 'LOW'),
+            'framer-motion': ('MIT', 'LOW'), 'tailwindcss': ('MIT', 'LOW'),
+            'postcss': ('MIT', 'LOW'), 'autoprefixer': ('MIT', 'LOW'),
+            'uuid': ('MIT', 'LOW'), 'dotenv': ('BSD-2-Clause', 'LOW'),
+            'body-parser': ('MIT', 'LOW'), 'cors': ('MIT', 'LOW'),
+            'jsonwebtoken': ('MIT', 'LOW'), 'mongoose': ('MIT', 'LOW'),
+            'redis': ('MIT', 'LOW'), 'passport': ('MIT', 'LOW'),
+            'bcrypt': ('MIT', 'LOW'), 'multer': ('MIT', 'LOW'),
+            'joi': ('BSD-3-Clause', 'LOW'), 'helmet': ('MIT', 'LOW'),
+            'compression': ('MIT', 'LOW'), 'morgan': ('MIT', 'LOW'),
+            'winston': ('MIT', 'LOW'), 'nodemailer': ('MIT', 'LOW'),
+            'cheerio': ('MIT', 'LOW'), 'puppeteer': ('Apache-2.0', 'LOW'),
+            'graphql': ('MIT', 'LOW'), 'apollo': ('MIT', 'LOW'),
+            'date-fns': ('MIT', 'LOW'), 'immer': ('MIT', 'LOW'),
+            'zustand': ('MIT', 'LOW'), 'react-hook-form': ('MIT', 'LOW'),
+            'zod': ('MIT', 'LOW'), 'prisma': ('Apache-2.0', 'LOW'),
+        }
+        try:
+            content = repo.get_contents('package.json')
+            data = json.loads(content.decoded_content)
+            all_deps = {}
+            all_deps.update(data.get('dependencies', {}))
+            all_deps.update(data.get('devDependencies', {}))
+            for pkg_name in list(all_deps.keys())[:50]:
+                base = pkg_name.split('/')[0] if pkg_name.startswith('@') else pkg_name
+                if base in known_licenses:
+                    lic, risk = known_licenses[base]
+                    info = self._get_license_details(lic)
+                    deps.append({
+                        'name': pkg_name, 'version': all_deps[pkg_name],
+                        'license': info.get('name', lic), 'license_key': info.get('key', lic.lower()),
+                        'risk': risk,
+                    })
+                else:
+                    deps.append({
+                        'name': pkg_name, 'version': all_deps[pkg_name],
+                        'license': 'Unknown', 'license_key': 'unknown', 'risk': 'UNKNOWN',
+                    })
+        except:
+            pass
+        return deps
+    
+    def check_policy(self, license_key):
+        """Check license against company policy"""
+        from scanner.models import LicensePolicy
+        try:
+            policy = LicensePolicy.objects.get(license_key=license_key.lower())
+            return {'action': policy.action, 'policy_name': policy.license_name}
+        except LicensePolicy.DoesNotExist:
+            return {'action': 'warn', 'policy_name': None}
     
     def get_license_info(self, repo):
         """Professional license detection - sab pick karega"""
@@ -181,7 +244,10 @@ class GitHubService:
                 'can_modify': True,
                 'can_distribute': True,
                 'requires_attribution': True,
-                'requires_open_source': False
+                'requires_open_source': False,
+                'permissions': ['Commercial use', 'Modification', 'Distribution', 'Private use'],
+                'conditions': ['Attribution required', 'Include copyright notice'],
+                'limitations': ['No liability', 'No warranty', 'No trademark use']
             },
             'Apache-2.0': {
                 'name': 'Apache License 2.0',
@@ -194,7 +260,10 @@ class GitHubService:
                 'can_modify': True,
                 'can_distribute': True,
                 'requires_attribution': True,
-                'requires_open_source': False
+                'requires_open_source': False,
+                'permissions': ['Commercial use', 'Modification', 'Distribution', 'Patent use', 'Private use'],
+                'conditions': ['Attribution required', 'Include license notice', 'State changes'],
+                'limitations': ['No liability', 'No warranty', 'No trademark use']
             },
             'BSD-3-Clause': {
                 'name': 'BSD 3-Clause License',
@@ -207,7 +276,10 @@ class GitHubService:
                 'can_modify': True,
                 'can_distribute': True,
                 'requires_attribution': True,
-                'requires_open_source': False
+                'requires_open_source': False,
+                'permissions': ['Commercial use', 'Modification', 'Distribution', 'Private use'],
+                'conditions': ['Attribution required', 'Include copyright notice'],
+                'limitations': ['No liability', 'No warranty', 'No endorsement']
             },
             'BSD-2-Clause': {
                 'name': 'BSD 2-Clause License',
@@ -220,7 +292,10 @@ class GitHubService:
                 'can_modify': True,
                 'can_distribute': True,
                 'requires_attribution': True,
-                'requires_open_source': False
+                'requires_open_source': False,
+                'permissions': ['Commercial use', 'Modification', 'Distribution', 'Private use'],
+                'conditions': ['Attribution required', 'Include copyright notice'],
+                'limitations': ['No liability', 'No warranty']
             },
             'ISC': {
                 'name': 'ISC License',
@@ -233,7 +308,10 @@ class GitHubService:
                 'can_modify': True,
                 'can_distribute': True,
                 'requires_attribution': True,
-                'requires_open_source': False
+                'requires_open_source': False,
+                'permissions': ['Commercial use', 'Modification', 'Distribution', 'Private use'],
+                'conditions': ['Attribution required', 'Include copyright notice'],
+                'limitations': ['No liability', 'No warranty']
             },
             'GPL-3.0': {
                 'name': 'GNU General Public License v3.0',
@@ -246,7 +324,10 @@ class GitHubService:
                 'can_modify': True,
                 'can_distribute': True,
                 'requires_attribution': True,
-                'requires_open_source': True
+                'requires_open_source': True,
+                'permissions': ['Commercial use', 'Modification', 'Distribution'],
+                'conditions': ['Attribution required', 'Open source required', 'State changes', 'Include license'],
+                'limitations': ['No liability', 'No warranty']
             },
             'GPL-2.0': {
                 'name': 'GNU General Public License v2.0',
@@ -259,7 +340,10 @@ class GitHubService:
                 'can_modify': True,
                 'can_distribute': True,
                 'requires_attribution': True,
-                'requires_open_source': True
+                'requires_open_source': True,
+                'permissions': ['Commercial use', 'Modification', 'Distribution'],
+                'conditions': ['Attribution required', 'Open source required', 'Include license'],
+                'limitations': ['No liability', 'No warranty']
             },
             'GPL': {
                 'name': 'GNU General Public License',
@@ -272,7 +356,10 @@ class GitHubService:
                 'can_modify': True,
                 'can_distribute': True,
                 'requires_attribution': True,
-                'requires_open_source': True
+                'requires_open_source': True,
+                'permissions': ['Commercial use', 'Modification', 'Distribution'],
+                'conditions': ['Attribution required', 'Open source required', 'Include license'],
+                'limitations': ['No liability', 'No warranty']
             },
             'AGPL-3.0': {
                 'name': 'GNU Affero General Public License v3.0',
@@ -285,7 +372,10 @@ class GitHubService:
                 'can_modify': True,
                 'can_distribute': True,
                 'requires_attribution': True,
-                'requires_open_source': True
+                'requires_open_source': True,
+                'permissions': ['Commercial use', 'Modification', 'Distribution'],
+                'conditions': ['Attribution required', 'Open source required', 'Network use = distribution'],
+                'limitations': ['No liability', 'No warranty']
             },
             'LGPL-3.0': {
                 'name': 'GNU Lesser General Public License v3.0',
@@ -298,7 +388,10 @@ class GitHubService:
                 'can_modify': True,
                 'can_distribute': True,
                 'requires_attribution': True,
-                'requires_open_source': False
+                'requires_open_source': False,
+                'permissions': ['Commercial use', 'Modification', 'Distribution', 'Private use'],
+                'conditions': ['Attribution required', 'Library changes open source', 'Include license'],
+                'limitations': ['No liability', 'No warranty']
             },
             'MPL-2.0': {
                 'name': 'Mozilla Public License 2.0',
@@ -311,7 +404,10 @@ class GitHubService:
                 'can_modify': True,
                 'can_distribute': True,
                 'requires_attribution': True,
-                'requires_open_source': False
+                'requires_open_source': False,
+                'permissions': ['Commercial use', 'Modification', 'Distribution'],
+                'conditions': ['Attribution required', 'Modified files open source', 'Include license'],
+                'limitations': ['No liability', 'No warranty', 'Trademark use']
             },
             'EPL-2.0': {
                 'name': 'Eclipse Public License 2.0',
@@ -324,7 +420,10 @@ class GitHubService:
                 'can_modify': True,
                 'can_distribute': True,
                 'requires_attribution': True,
-                'requires_open_source': False
+                'requires_open_source': False,
+                'permissions': ['Commercial use', 'Modification', 'Distribution'],
+                'conditions': ['Attribution required', 'Modified files open source', 'Include license'],
+                'limitations': ['No liability', 'No warranty']
             },
             'Unlicense': {
                 'name': 'The Unlicense',
@@ -337,7 +436,10 @@ class GitHubService:
                 'can_modify': True,
                 'can_distribute': True,
                 'requires_attribution': False,
-                'requires_open_source': False
+                'requires_open_source': False,
+                'permissions': ['Commercial use', 'Modification', 'Distribution', 'Private use'],
+                'conditions': [],
+                'limitations': ['No liability', 'No warranty']
             },
             'CC0-1.0': {
                 'name': 'Creative Commons Zero v1.0',
@@ -350,7 +452,10 @@ class GitHubService:
                 'can_modify': True,
                 'can_distribute': True,
                 'requires_attribution': False,
-                'requires_open_source': False
+                'requires_open_source': False,
+                'permissions': ['Commercial use', 'Modification', 'Distribution', 'Private use'],
+                'conditions': [],
+                'limitations': ['No liability', 'No warranty']
             },
             'proprietary': {
                 'name': 'Proprietary License',
@@ -363,7 +468,10 @@ class GitHubService:
                 'can_modify': 'Unknown',
                 'can_distribute': 'Unknown',
                 'requires_attribution': 'Unknown',
-                'requires_open_source': False
+                'requires_open_source': False,
+                'permissions': [],
+                'conditions': ['Review terms carefully'],
+                'limitations': ['No liability', 'No warranty', 'Restrictions may apply']
             },
             'custom': {
                 'name': 'Custom License',
@@ -376,7 +484,10 @@ class GitHubService:
                 'can_modify': 'Unknown',
                 'can_distribute': 'Unknown',
                 'requires_attribution': 'Unknown',
-                'requires_open_source': False
+                'requires_open_source': False,
+                'permissions': [],
+                'conditions': ['Review terms carefully'],
+                'limitations': ['No liability', 'No warranty']
             },
             'no-license': {
                 'name': 'No License Found',
@@ -389,7 +500,10 @@ class GitHubService:
                 'can_modify': False,
                 'can_distribute': False,
                 'requires_attribution': False,
-                'requires_open_source': False
+                'requires_open_source': False,
+                'permissions': [],
+                'conditions': ['Add a license to grant permissions'],
+                'limitations': ['No commercial use', 'No modification', 'No distribution']
             },
             'unknown': {
                 'name': 'Unknown License',
@@ -402,7 +516,10 @@ class GitHubService:
                 'can_modify': 'Unknown',
                 'can_distribute': 'Unknown',
                 'requires_attribution': 'Unknown',
-                'requires_open_source': False
+                'requires_open_source': False,
+                'permissions': [],
+                'conditions': ['Manually review repository'],
+                'limitations': ['No liability', 'No warranty']
             }
         }
         return licenses_db.get(key, licenses_db['unknown'])

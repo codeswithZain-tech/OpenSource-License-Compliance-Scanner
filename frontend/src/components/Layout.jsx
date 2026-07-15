@@ -1,227 +1,205 @@
-import { useState } from 'react';
-import { Menu, X, Home, Scan, History, Settings, HelpCircle, Moon, Sun, Bell, LogOut } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { LayoutDashboard, Scan, History, LogOut, X, Shield, Bell, User, PanelLeftClose, PanelLeft, Settings2, Layers, ChevronRight } from 'lucide-react';
+import ThreeScene from './ThreeScene';
 
-const Layout = ({ children, onLogout, user }) => {
+const Layout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [darkMode, setDarkMode] = useState(false);
-  const [showUserMenu, setShowUserMenu] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const navigate = useNavigate();
+  const location = useLocation();
 
-  const toggleDarkMode = () => {
-    setDarkMode(!darkMode);
-    if (darkMode) {
-      document.documentElement.classList.remove('dark');
-    } else {
-      document.documentElement.classList.add('dark');
-    }
+  useEffect(() => {
+    const mobile = window.innerWidth < 1024;
+    setIsMobile(mobile);
+    if (!mobile) setSidebarOpen(true);
+    const handleResize = () => {
+      const m = window.innerWidth < 1024;
+      setIsMobile(m);
+      setSidebarOpen(!m);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  useEffect(() => {
+    if (isMobile) setSidebarOpen(false);
+  }, [location.pathname]);
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    navigate('/login');
   };
 
-  const menuItems = [
-    { name: 'Dashboard', icon: Home, path: '/' },
-    { name: 'Scanner', icon: Scan, path: '/scanner' },
-    { name: 'History', icon: History, path: '/history' },
-    { name: 'Settings', icon: Settings, path: '/settings' },
-    { name: 'Help', icon: HelpCircle, path: '/help' },
+  const navItems = [
+    { name: 'Dashboard', path: '/', icon: LayoutDashboard },
+    { name: 'Scanner', path: '/scanner', icon: Scan },
+    { name: 'History', path: '/history', icon: History },
+    { name: 'Batch Scan', path: '/batch-scan', icon: Layers },
+    { name: 'Settings', path: '/settings', icon: Settings2 },
   ];
 
-  // Get user initial for avatar
-  const getUserInitial = () => {
-    if (user?.first_name) return user.first_name[0].toUpperCase();
-    if (user?.username) return user.username[0].toUpperCase();
-    return 'U';
-  };
-
-  // Get user display name
-  const getDisplayName = () => {
-    if (user?.first_name && user?.last_name) {
-      return `${user.first_name} ${user.last_name}`;
-    }
-    if (user?.first_name) return user.first_name;
-    return user?.username || 'User';
+  const pageTitle = {
+    '/': 'Dashboard',
+    '/scanner': 'Scanner',
+    '/history': 'History',
+    '/batch-scan': 'Batch Scan',
+    '/settings': 'Settings',
   };
 
   return (
-    <div className="flex h-screen bg-gray-50 dark:bg-gray-950">
+    <div className="min-h-screen text-slate-100 flex overflow-hidden relative">
+      {/* Animated background */}
+      <div className="fixed inset-0 z-0">
+        <div className="absolute inset-0 bg-[#020617]" />
+        <ThreeScene />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#020617]/60 via-transparent to-[#020617]/20 pointer-events-none" />
+      </div>
+
+      {/* Mobile overlay */}
+      <AnimatePresence>
+        {isMobile && sidebarOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            onClick={() => setSidebarOpen(false)}
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40"
+          />
+        )}
+      </AnimatePresence>
+
       {/* Sidebar */}
       <AnimatePresence mode="wait">
         {sidebarOpen && (
           <motion.aside
-            initial={{ x: -300 }}
+            key="sidebar"
+            initial={{ x: isMobile ? '-100%' : -72 }}
             animate={{ x: 0 }}
-            exit={{ x: -300 }}
-            transition={{ type: 'spring', damping: 25 }}
-            className="fixed lg:relative z-50 w-72 h-full bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 shadow-2xl"
+            exit={{ x: isMobile ? '-100%' : -72 }}
+            transition={{ type: 'spring', damping: 28, stiffness: 220 }}
+            className="fixed lg:relative z-50 w-64 h-screen flex flex-col shrink-0 glass-panel border-r border-white/[0.05]"
           >
-            {/* Logo Section */}
-            <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-800">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center shadow-lg">
-                  <span className="text-white font-bold text-xl">L</span>
+            {/* Logo */}
+            <div className="h-16 lg:h-18 flex items-center justify-between px-4 border-b border-white/[0.04]">
+              <div className="flex items-center gap-2.5">
+                <div className="relative">
+                  <div className="absolute inset-0 bg-violet-500 blur-lg opacity-60 rounded-xl" />
+                  <div className="relative bg-gradient-to-br from-violet-500 to-indigo-600 p-2 rounded-xl shadow-[0_0_20px_rgba(139,92,246,0.25)]">
+                    <Shield className="w-5 h-5 text-white" />
+                  </div>
                 </div>
-                <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                  License Scanner
-                </span>
+                <div>
+                  <span className="text-base font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-300">License</span>
+                  <span className="text-base font-bold text-violet-400">Scanner</span>
+                </div>
               </div>
-              <button 
-                onClick={() => setSidebarOpen(false)} 
-                className="lg:hidden p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              <button
+                onClick={() => setSidebarOpen(false)}
+                className="p-1.5 rounded-lg hover:bg-white/[0.06] transition-colors text-slate-500 hover:text-slate-300"
               >
-                <X className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                <X className="w-4 h-4" />
               </button>
             </div>
 
-            {/* User Profile in Sidebar */}
-            {user && (
-              <div className="mx-4 mt-4 p-3 rounded-xl bg-gradient-to-r from-blue-50 to-purple-50 dark:from-gray-800 dark:to-gray-800/50 border border-blue-100 dark:border-gray-700">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold shadow-md">
-                    {getUserInitial()}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-gray-800 dark:text-white truncate">
-                      {getDisplayName()}
-                    </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                      @{user?.username}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Navigation Menu */}
-            <nav className="flex-1 p-4 space-y-2">
-              {menuItems.map((item, index) => (
-                <motion.a
+            {/* Nav */}
+            <nav className="flex-1 px-2.5 py-4 space-y-0.5 overflow-y-auto scrollbar-hide">
+              {navItems.map((item) => (
+                <NavLink
                   key={item.name}
-                  href={item.path}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: index * 0.05 }}
-                  className="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-blue-600 dark:hover:text-blue-400 transition-all duration-300 group cursor-pointer"
+                  to={item.path}
+                  onClick={() => isMobile && setSidebarOpen(false)}
+                  className={({ isActive }) => `
+                    flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all duration-200 group relative
+                    ${isActive ? 'bg-white/[0.07] text-white shadow-[0_0_12px_rgba(139,92,246,0.06)]' : 'text-slate-400 hover:text-slate-200 hover:bg-white/[0.03]'}
+                  `}
                 >
-                  <item.icon className="w-5 h-5 group-hover:scale-110 transition-transform" />
-                  <span className="font-medium">{item.name}</span>
-                </motion.a>
+                  {({ isActive }) => (
+                    <>
+                      {isActive && (
+                        <motion.div
+                          layoutId="navHighlight"
+                          transition={{ type: 'spring', stiffness: 350, damping: 30 }}
+                          className="absolute inset-0 rounded-xl bg-gradient-to-r from-violet-500/10 to-transparent border-l-[2.5px] border-violet-500"
+                        />
+                      )}
+                      <item.icon className={`w-4.5 h-4.5 relative z-10 transition-all duration-200 ${isActive ? 'text-violet-400' : 'group-hover:text-violet-400'}`} />
+                      <span className="text-sm font-medium relative z-10">{item.name}</span>
+                      {isActive && (
+                        <motion.div
+                          layoutId="navDot"
+                          className="ml-auto w-1.5 h-1.5 rounded-full bg-violet-400 shadow-[0_0_6px_rgba(139,92,246,0.6)] relative z-10"
+                        />
+                      )}
+                    </>
+                  )}
+                </NavLink>
               ))}
             </nav>
 
-            {/* Footer */}
-            <div className="p-4 border-t border-gray-200 dark:border-gray-800 space-y-3">
-              <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-gray-800 dark:to-gray-800/50 rounded-xl p-3">
-                <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
-                  Version 1.0.0
-                </p>
-              </div>
-              
-              {/* Logout Button */}
+            {/* Logout */}
+            <div className="p-2.5 border-t border-white/[0.04]">
               <button
-                onClick={onLogout}
-                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all duration-300 group"
+                onClick={handleLogout}
+                className="flex items-center gap-3 px-3.5 py-2.5 w-full rounded-xl text-slate-500 hover:text-red-400 hover:bg-red-500/5 transition-all group text-sm"
               >
-                <LogOut className="w-5 h-5 group-hover:scale-110 transition-transform" />
-                <span className="font-medium">Logout</span>
+                <LogOut className="w-4.5 h-4.5 group-hover:scale-105 transition-transform" />
+                <span className="font-medium">Sign out</span>
               </button>
             </div>
           </motion.aside>
         )}
       </AnimatePresence>
 
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Header */}
-        <header className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg border-b border-gray-200 dark:border-gray-800 sticky top-0 z-40">
-          <div className="flex items-center justify-between px-6 py-4">
-            <div className="flex items-center gap-4">
-              {!sidebarOpen && (
-                <button
-                  onClick={() => setSidebarOpen(true)}
-                  className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-                >
-                  <Menu className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-                </button>
+      {/* Main */}
+      <main className="flex-1 flex flex-col min-h-screen min-w-0 relative z-10">
+        <header className="h-14 lg:h-16 flex items-center justify-between px-4 lg:px-6 border-b border-white/[0.04] glass-panel sticky top-0 z-30">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className="p-2 rounded-lg hover:bg-white/[0.06] transition-all text-slate-400 hover:text-slate-200"
+            >
+              {sidebarOpen ? <PanelLeftClose className="w-4.5 h-4.5" /> : <PanelLeft className="w-4.5 h-4.5" />}
+            </button>
+            <div className="hidden sm:flex items-center gap-2 text-sm">
+              {location.pathname !== '/' && (
+                <>
+                  <NavLink to="/" className="text-slate-500 hover:text-slate-300 transition-colors">Home</NavLink>
+                  <ChevronRight className="w-3.5 h-3.5 text-slate-600" />
+                </>
               )}
-              <h1 className="text-xl font-semibold text-gray-800 dark:text-white">
-                License Compliance Scanner
-              </h1>
+              <span className="text-slate-200 font-medium">{pageTitle[location.pathname] || 'Page'}</span>
             </div>
+          </div>
 
-            <div className="flex items-center gap-3">
-              {/* Notification Bell */}
-              <button className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors relative">
-                <Bell className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
-              </button>
-
-              {/* Dark Mode Toggle */}
-              <button
-                onClick={toggleDarkMode}
-                className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-              >
-                {darkMode ? (
-                  <Sun className="w-5 h-5 text-yellow-500" />
-                ) : (
-                  <Moon className="w-5 h-5 text-gray-600" />
-                )}
-              </button>
-
-              {/* User Profile Dropdown */}
-              <div className="relative">
-                <button
-                  onClick={() => setShowUserMenu(!showUserMenu)}
-                  className="focus:outline-none"
-                >
-                  <div className="w-9 h-9 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold shadow-md hover:scale-105 transition-transform">
-                    {getUserInitial()}
-                  </div>
-                </button>
-                
-                {/* Dropdown Menu */}
-                {showUserMenu && (
-                  <>
-                    <div 
-                      className="fixed inset-0 z-40"
-                      onClick={() => setShowUserMenu(false)}
-                    />
-                    <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 z-50 overflow-hidden">
-                      <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-                        <p className="text-sm font-semibold text-gray-800 dark:text-white">
-                          {getDisplayName()}
-                        </p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                          @{user?.username}
-                        </p>
-                        {user?.email && (
-                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 truncate">
-                            {user.email}
-                          </p>
-                        )}
-                      </div>
-                      <div className="p-2">
-                        <button
-                          onClick={() => {
-                            setShowUserMenu(false);
-                            onLogout();
-                          }}
-                          className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-                        >
-                          <LogOut className="w-4 h-4" />
-                          <span className="text-sm">Sign out</span>
-                        </button>
-                      </div>
-                    </div>
-                  </>
-                )}
+          <div className="flex items-center gap-2.5">
+            <button className="relative p-2 rounded-full hover:bg-white/[0.06] transition-colors group">
+              <Bell className="w-4.5 h-4.5 text-slate-400 group-hover:text-slate-200" />
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-violet-500 rounded-full shadow-[0_0_6px_rgba(139,92,246,0.6)]" />
+            </button>
+            <div className="w-8 h-8 lg:w-9 lg:h-9 rounded-full bg-gradient-to-br from-violet-500 to-indigo-600 p-[2px] shadow-[0_0_12px_rgba(139,92,246,0.2)]">
+              <div className="w-full h-full bg-[#020617] rounded-full flex items-center justify-center">
+                <User className="w-4 h-4 text-slate-300" />
               </div>
             </div>
           </div>
         </header>
 
-        {/* Page Content */}
-        <main className="flex-1 overflow-y-auto p-6">
-          {children}
-        </main>
-      </div>
+        <div className="flex-1 overflow-auto p-4 md:p-6 lg:p-8 scrollbar-hide">
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -12 }}
+            transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+            className="max-w-7xl mx-auto"
+          >
+            <Outlet />
+          </motion.div>
+        </div>
+      </main>
     </div>
   );
 };

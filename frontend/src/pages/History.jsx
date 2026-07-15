@@ -1,150 +1,168 @@
- import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { History as HistoryIcon, Activity, ChevronLeft, ChevronRight, ChevronDown, Search, ArrowUpRight, Calendar } from 'lucide-react';
+import api from '../utils/api';
+import GlassCard from '../components/GlassCard';
+import RiskBadge from '../components/RiskBadge';
+import LoadingSpinner from '../components/LoadingSpinner';
+import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { History as HistoryIcon, Clock, ExternalLink, Trash2, RefreshCw } from 'lucide-react';
-import axios from 'axios';
 
 const History = () => {
   const [scans, setScans] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [filter, setFilter] = useState('');
+  const pageSize = 10;
 
   useEffect(() => {
-    fetchHistory();
-  }, []);
-
-  const fetchHistory = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await axios.get('/api/history/');
-      setScans(response.data.scans);
-    } catch (err) {
-      setError('Failed to load scan history');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    return date.toLocaleString();
-  };
-
-  const getStatusColor = (status) => {
-    switch(status) {
-      case 'completed': return 'text-green-500 bg-green-100 dark:bg-green-900/20';
-      case 'pending': return 'text-yellow-500 bg-yellow-100 dark:bg-yellow-900/20';
-      case 'failed': return 'text-red-500 bg-red-100 dark:bg-red-900/20';
-      default: return 'text-gray-500 bg-gray-100 dark:bg-gray-800';
-    }
-  };
+    const fetchScans = async () => {
+      setLoading(true);
+      try {
+        const res = await api.get('/history/', { params: { page, pageSize, search: filter } });
+        if (res.data.status === 'success') {
+          const list = res.data.scans || [];
+          setScans(list);
+          setTotalPages(Math.ceil((res.data.total || list.length) / pageSize) || 1);
+        }
+      } catch (e) { console.error(e); }
+      finally { setLoading(false); }
+    };
+    fetchScans();
+  }, [page, filter]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 lg:space-y-8">
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-800 dark:text-white">Scan History</h2>
-          <p className="text-gray-500 dark:text-gray-400 mt-1">
-            View all your previous license scans
-          </p>
+      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
+        <div className="flex items-center gap-3 mb-1">
+          <div className="w-8 h-8 rounded-lg bg-violet-500/10 border border-violet-500/20 flex items-center justify-center">
+            <HistoryIcon className="w-4 h-4 text-violet-400" />
+          </div>
+          <h1 className="text-xl lg:text-3xl font-bold">Scan History</h1>
         </div>
-        <button
-          onClick={fetchHistory}
-          className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-        >
-          <RefreshCw className={`w-5 h-5 text-gray-600 dark:text-gray-400 ${loading ? 'animate-spin' : ''}`} />
-        </button>
-      </div>
+        <p className="text-sm text-slate-500 ml-11">Review all your past license scans and their results.</p>
+      </motion.div>
 
-      {/* Loading State */}
-      {loading && (
-        <div className="rounded-2xl p-12 text-center bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800">
-          <RefreshCw className="w-12 h-12 mx-auto text-gray-400 animate-spin mb-4" />
-          <p className="text-gray-500 dark:text-gray-400">Loading scan history...</p>
+      {/* Filters */}
+      <GlassCard delay={0.05} hoverEffect={false}>
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="relative flex-1">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+            <input
+              type="text"
+              placeholder="Search repositories..."
+              value={filter}
+              onChange={(e) => { setFilter(e.target.value); setPage(1); }}
+              className="input-icon pl-11"
+            />
+          </div>
         </div>
-      )}
+      </GlassCard>
 
-      {/* Error State */}
-      {error && !loading && (
-        <div className="rounded-2xl p-12 text-center bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
-          <p className="text-red-600 dark:text-red-400">{error}</p>
-          <button
-            onClick={fetchHistory}
-            className="mt-4 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
-          >
-            Try Again
-          </button>
-        </div>
-      )}
+      {/* List */}
+      {loading ? (
+        <LoadingSpinner text="Loading history" />
+      ) : scans.length > 0 ? (
+        <>
+          {/* Desktop */}
+          <GlassCard delay={0.1} hoverEffect={false}>
+            <div className="hidden md:block">
+              <table className="w-full text-left">
+                <thead>
+                  <tr className="border-b border-white/[0.04] text-slate-500 text-xs font-semibold uppercase tracking-[0.08em]">
+                    <th className="pb-3.5 pl-4 font-medium">Repository</th>
+                    <th className="pb-3.5 font-medium">License</th>
+                    <th className="pb-3.5 font-medium">Risk</th>
+                    <th className="pb-3.5 font-medium">Dependencies</th>
+                    <th className="pb-3.5 font-medium">Date</th>
+                    <th className="pb-3.5 font-medium"></th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/[0.03]">
+                  {scans.map((scan, i) => (
+                    <motion.tr key={scan.id} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.03 }} className="group hover:bg-white/[0.02] transition-colors">
+                      <td className="py-3.5 pl-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-lg bg-white/[0.04] flex items-center justify-center text-slate-500 group-hover:text-violet-400 transition-colors">
+                            <Activity className="w-4 h-4" />
+                          </div>
+                          <span className="text-sm font-medium text-slate-200 truncate max-w-[240px]">{scan.repo_name || scan.repo_url}</span>
+                        </div>
+                      </td>
+                      <td className="py-3.5 text-sm text-slate-300">{scan.license_name || scan.license || '—'}</td>
+                      <td className="py-3.5"><RiskBadge level={scan.risk_level || 'UNKNOWN'} /></td>
+                      <td className="py-3.5 text-sm text-slate-500">{scan.dependencies?.length || 0}</td>
+                      <td className="py-3.5 text-sm text-slate-500">{new Date(scan.created_at).toLocaleDateString()}</td>
+                      <td className="py-3.5">
+                        <Link to={`/scanner?repo=${encodeURIComponent(scan.repo_url)}`} className="btn-ghost flex items-center gap-1.5 py-1.5 px-3">
+                          Rescan <ArrowUpRight className="w-3 h-3" />
+                        </Link>
+                      </td>
+                    </motion.tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
 
-      {/* Empty State */}
-      {!loading && !error && scans.length === 0 && (
-        <div className="rounded-2xl p-12 text-center bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800">
-          <HistoryIcon className="w-16 h-16 mx-auto text-gray-400 mb-4" />
-          <h3 className="text-lg font-medium text-gray-800 dark:text-white mb-2">No scans yet</h3>
-          <p className="text-gray-500 dark:text-gray-400 mb-4">
-            Start by scanning your first repository
-          </p>
-          <a
-            href="/scanner"
-            className="inline-block px-6 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl font-medium hover:shadow-lg transition-all"
-          >
-            Go to Scanner
-          </a>
-        </div>
-      )}
-
-      {/* Scans List */}
-      {!loading && !error && scans.length > 0 && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="space-y-3"
-        >
-          {scans.map((scan, index) => (
-            <motion.div
-              key={scan.id}
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: index * 0.05 }}
-              className="rounded-2xl p-5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-lg hover:shadow-xl transition-all"
-            >
-              <div className="flex items-center justify-between flex-wrap gap-4">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-3 mb-2 flex-wrap">
-                    <h3 className="text-lg font-semibold text-gray-800 dark:text-white truncate">
-                      {scan.repo_name || scan.repo_url.split('/').slice(-2).join('/')}
-                    </h3>
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(scan.status)}`}>
-                      {scan.status}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400 flex-wrap">
-                    <div className="flex items-center gap-1">
-                      <Clock className="w-4 h-4" />
-                      <span>{formatDate(scan.created_at)}</span>
+            {/* Mobile */}
+            <div className="md:hidden space-y-2.5">
+              {scans.map((scan, i) => (
+                <motion.div key={scan.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.03 }} className="p-4 rounded-xl bg-white/[0.02] border border-white/[0.05]">
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                      <Activity className="w-4 h-4 text-violet-400 shrink-0" />
+                      <span className="text-sm font-medium text-slate-200 truncate">{scan.repo_name || scan.repo_url}</span>
                     </div>
-                    <a
-                      href={scan.repo_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-1 text-blue-600 hover:underline"
-                    >
-                      View Repository <ExternalLink className="w-3 h-3" />
-                    </a>
+                    <RiskBadge level={scan.risk_level || 'UNKNOWN'} />
                   </div>
-                </div>
-                <a
-                  href={`/scanner?repo=${encodeURIComponent(scan.repo_url)}`}
-                  className="px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg text-sm font-medium hover:shadow-lg transition-all"
-                >
-                  Scan Again
-                </a>
-              </div>
-            </motion.div>
-          ))}
-        </motion.div>
+                  <div className="flex items-center justify-between text-xs text-slate-500 mb-3">
+                    <div className="flex items-center gap-1.5">
+                      <Calendar className="w-3.5 h-3.5" />
+                      {new Date(scan.created_at).toLocaleDateString()}
+                    </div>
+                    <span>License: {scan.license_name || scan.license || '—'}</span>
+                  </div>
+                  <Link to={`/scanner?repo=${encodeURIComponent(scan.repo_url)}`} className="text-xs font-medium text-violet-400 hover:text-violet-300 transition-colors flex items-center gap-1">
+                    Rescan <ArrowUpRight className="w-3 h-3" />
+                  </Link>
+                </motion.div>
+              ))}
+            </div>
+          </GlassCard>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-center gap-2.5">
+              <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} className="btn-icon disabled:opacity-30">
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
+                <button key={p} onClick={() => setPage(p)} className={`w-9 h-9 rounded-xl text-sm font-medium transition-all ${
+                  p === page ? 'bg-violet-500/20 text-violet-400 border border-violet-500/30' : 'bg-white/[0.03] text-slate-500 hover:text-slate-300 hover:bg-white/[0.06] border border-white/[0.05]'
+                }`}>
+                  {p}
+                </button>
+              ))}
+              <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages} className="btn-icon disabled:opacity-30">
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          )}
+        </>
+      ) : (
+        <GlassCard delay={0.1} hoverEffect={false}>
+          <div className="text-center py-16 lg:py-20">
+            <div className="w-14 h-14 mx-auto bg-white/[0.04] rounded-full flex items-center justify-center mb-4 border border-white/[0.05]">
+              <HistoryIcon className="w-6 h-6 text-slate-500" />
+            </div>
+            <h3 className="text-base font-semibold text-slate-300 mb-1.5">No scans found</h3>
+            <p className="text-sm text-slate-500 mb-6">{filter ? 'No results match your search.' : 'Start scanning repositories to build your history.'}</p>
+            <Link to="/scanner" className="btn-primary inline-flex items-center gap-2 text-sm">
+              <Activity className="w-4 h-4" /> Start Scan
+            </Link>
+          </div>
+        </GlassCard>
       )}
     </div>
   );

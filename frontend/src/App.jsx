@@ -1,72 +1,56 @@
-import { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import axios from 'axios';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { AnimatePresence } from 'framer-motion';
 import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
 import Scanner from './pages/Scanner';
 import History from './pages/History';
+import BatchScan from './pages/BatchScan';
+import Settings from './pages/Settings';
 import Login from './pages/Login';
+import Register from './pages/Register';
+import NotFound from './pages/NotFound';
+import { ToastProvider } from './components/Toast';
 
-// Set axios default config
-axios.defaults.baseURL = import.meta.env.VITE_API_BASE_URL || '';
+const PrivateRoute = ({ children }) => {
+  const token = localStorage.getItem('token');
+  return token ? children : <Navigate to="/login" replace />;
+};
 
-// NOTE: In Vercel, set VITE_API_BASE_URL in project env.
-// For same-origin API routing, keep it '' and use vercel rewrites.
+const PublicRoute = ({ children }) => {
+  const token = localStorage.getItem('token');
+  return !token ? children : <Navigate to="/" replace />;
+};
 
-function App() {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const token = localStorage.getItem('access_token');
-    const savedUser = localStorage.getItem('user');
-    
-    if (token && savedUser) {
-      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-      setUser(JSON.parse(savedUser));
-    }
-    setLoading(false);
-  }, []);
-
-  const handleLogin = (userData) => {
-    setUser(userData);
-  };
-
-  const handleLogout = () => {
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('refresh_token');
-    localStorage.removeItem('user');
-    delete axios.defaults.headers.common['Authorization'];
-    setUser(null);
-  };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-purple-50">
-        <div className="text-center">
-          <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!user) {
-    return <Login onLogin={handleLogin} />;
-  }
+const AnimatedRoutes = () => {
+  const location = useLocation();
 
   return (
-    <Router>
-      <Layout onLogout={handleLogout} user={user}>
-        <Routes>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/scanner" element={<Scanner />} />
-          <Route path="/history" element={<History />} />
-          <Route path="/settings" element={<div className="text-center py-20 text-gray-600">Settings Page (Coming Soon)</div>} />
-          <Route path="/help" element={<div className="text-center py-20 text-gray-600">Help Page (Coming Soon)</div>} />
-        </Routes>
-      </Layout>
-    </Router>
+    <AnimatePresence mode="wait">
+      <Routes location={location} key={location.pathname}>
+        <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
+        <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
+
+        <Route path="/" element={<PrivateRoute><Layout /></PrivateRoute>}>
+          <Route index element={<Dashboard />} />
+          <Route path="scanner" element={<Scanner />} />
+          <Route path="history" element={<History />} />
+          <Route path="batch-scan" element={<BatchScan />} />
+          <Route path="settings" element={<Settings />} />
+        </Route>
+
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </AnimatePresence>
+  );
+};
+
+function App() {
+  return (
+    <ToastProvider>
+      <Router>
+        <AnimatedRoutes />
+      </Router>
+    </ToastProvider>
   );
 }
 
