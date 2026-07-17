@@ -11,33 +11,35 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 from dotenv import load_dotenv
 import os
-import warnings
 
 load_dotenv()
 
+# Add this line where you need token
 GITHUB_TOKEN = os.getenv('GITHUB_TOKEN')
 from pathlib import Path
 
+# Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
+# Quick-start development settings - unsuitable for production
+# See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
+
 # SECURITY WARNING: keep the secret key used in production secret!
+# In production, SECRET_KEY must be provided via environment variable.
 SECRET_KEY = os.getenv('SECRET_KEY')
 if not SECRET_KEY:
-    SECRET_KEY = 'django-insecure-' + os.urandom(40).hex()
-    warnings.warn('SECRET_KEY not set. Using a random key. Sessions will invalidate on restart.')
+    raise RuntimeError('SECRET_KEY environment variable is required')
 
 
+# SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
 # Allow configuring ALLOWED_HOSTS via environment variable (comma-separated)
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '').split(',')
 ALLOWED_HOSTS = [h.strip() for h in ALLOWED_HOSTS if h.strip()]
-railway_host = os.getenv('RAILWAY_HOSTNAME')
-if railway_host:
-    ALLOWED_HOSTS.append(railway_host)
-ALLOWED_HOSTS.append('0.0.0.0')
-if not ALLOWED_HOSTS or ALLOWED_HOSTS == ['0.0.0.0']:
+if not ALLOWED_HOSTS:
+    # Safe default for local dev; production should set ALLOWED_HOSTS.
     ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
 
 
@@ -64,7 +66,6 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -109,17 +110,12 @@ WSGI_APPLICATION = 'license_scanner.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-DATABASE_URL = os.getenv('DATABASE_URL')
-if DATABASE_URL:
-    import dj_database_url
-    DATABASES = {'default': dj_database_url.config(default=DATABASE_URL, conn_max_age=600)}
-else:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
-        }
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
     }
+}
 
 
 # Password validation
@@ -157,12 +153,6 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = 'static/'
-STATIC_ROOT = BASE_DIR / 'staticfiles'
-STORAGES = {
-    'staticfiles': {
-        'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage',
-    },
-}
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
@@ -190,35 +180,13 @@ else:
 
 # CSRF Settings
 CSRF_TRUSTED_ORIGINS_ENV = os.getenv('CSRF_TRUSTED_ORIGINS', 'http://localhost:5173,http://127.0.0.1:5173')
-CSRF_TRUSTED_ORIGINS = []
-for o in CSRF_TRUSTED_ORIGINS_ENV.split(','):
-    o = o.strip()
-    if o and not o.startswith(('http://', 'https://')):
-        o = 'https://' + o
-    if o:
-        CSRF_TRUSTED_ORIGINS.append(o)
-# Auto-add Railway hostname for admin access
-if railway_host:
-    CSRF_TRUSTED_ORIGINS.append('https://' + railway_host)
-
-# Security cookies for HTTPS
-if not DEBUG:
-    CSRF_COOKIE_SECURE = True
-    SESSION_COOKIE_SECURE = True
-    CSRF_COOKIE_SAMESITE = 'Lax'
-    SESSION_COOKIE_SAMESITE = 'Lax'
+CSRF_TRUSTED_ORIGINS = [o.strip() for o in CSRF_TRUSTED_ORIGINS_ENV.split(',') if o.strip()]
 
 # CORS Settings
 CORS_ALLOW_ALL_ORIGINS = os.getenv('CORS_ALLOW_ALL_ORIGINS', 'False') == 'True'
 CORS_ALLOWED_ORIGINS_ENV = os.getenv('CORS_ALLOWED_ORIGINS', 'http://localhost:5173,http://127.0.0.1:5173')
 if not CORS_ALLOW_ALL_ORIGINS:
-    CORS_ALLOWED_ORIGINS = []
-    for o in CORS_ALLOWED_ORIGINS_ENV.split(','):
-        o = o.strip()
-        if o and not o.startswith(('http://', 'https://')):
-            o = 'https://' + o
-        if o:
-            CORS_ALLOWED_ORIGINS.append(o)
+    CORS_ALLOWED_ORIGINS = [o.strip() for o in CORS_ALLOWED_ORIGINS_ENV.split(',') if o.strip()]
 CORS_ALLOW_CREDENTIALS = True
 
 CORS_ALLOW_METHODS = [

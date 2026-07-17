@@ -1,112 +1,296 @@
 # OpenSource License Compliance Scanner
 
-A full-stack web application that scans GitHub repositories, detects open-source licenses, analyzes compliance risks, and generates PDF reports.
+A professional full-stack web application that scans GitHub repositories, detects open-source licenses, analyzes compliance risks, and generates detailed PDF reports.
 
-## Features
+> Deployment: See `README_DEPLOY.md` for GitHub-ready + Vercel setup (rewrites + required env vars).
 
-- **License Detection** — Identifies 30+ open-source licenses (MIT, GPL, Apache, BSD, AGPL, MPL, etc.) with risk level classification (LOW / MEDIUM / HIGH)
-- **License Policy Engine** — Configurable allow/warn/block rules per license with policy enforcement
-- **Dependency Scanning** — Extracts and analyzes dependencies from package.json, requirements.txt, and other manifest files
-- **Batch Scanning** — Scan multiple repositories at once with CSV export
-- **PDF Reports** — Generate professional PDF compliance reports
-- **JWT Authentication** — User registration, login, and protected routes
-- **Dark UI** — Glassmorphism design with 3D animations, fully responsive
 
-## Tech Stack
+---
 
-| Layer    | Technology                                     |
-| -------- | ---------------------------------------------- |
-| Frontend | React 19, Vite 8, Tailwind CSS 3, Framer Motion |
-| Backend  | Django 4.2, Django REST Framework, SQLite       |
-| Auth     | JWT (djangorestframework-simplejwt)             |
-| API      | PyGithub (GitHub API v3)                        |
-| Reports  | ReportLab                                       |
+## 🚀 Features
 
-## Quick Start
+### 🔍 License Detection
+- Detects 30+ open-source licenses
+- Supports:
+  - MIT
+  - GPL
+  - Apache
+  - BSD
+  - LGPL
+  - AGPL
+  - MPL
+  - ISC
+  - Unlicense
+  - CC0
+- Custom and proprietary license identification
+- Risk level assessment:
+  - 🟢 LOW
+  - 🟡 MEDIUM
+  - 🔴 HIGH
+- Smart compliance recommendations
 
-### Backend
+---
+
+### 📄 Reporting
+- Professional PDF report export
+- Scan history tracking
+- Interactive analytics dashboard
+
+---
+
+### 👤 Authentication System
+- JWT Authentication
+- User Registration & Login
+- Protected Routes
+- Profile Management
+
+---
+
+### 🎨 User Interface
+- Dark / Light Mode
+- Glassmorphism UI Design
+- Fully Responsive Design
+- Smooth Animations
+- Animated Sidebar Navigation
+
+---
+
+# 🛠️ Technology Stack
+
+## Backend
+
+| Package | Version | Purpose |
+|----------|----------|----------|
+| Django | 5.2.14 | Backend Framework |
+| Django REST Framework | 3.17.1 | REST API Development |
+| django-cors-headers | 4.9.0 | React Integration |
+| djangorestframework-simplejwt | 5.5.1 | JWT Authentication |
+| PyGithub | 2.9.1 | GitHub API Integration |
+| ReportLab | 4.5.0 | PDF Report Generation |
+| python-dotenv | 1.2.2 | Environment Variables |
+| PyJWT | 2.12.1 | JWT Handling |
+| requests | 2.33.1 | HTTP Requests |
+| cryptography | 48.0.0 | Security Encryption |
+| asgiref | 3.11.1 | ASGI Support |
+| sqlparse | 0.5.5 | SQL Parsing |
+| tzdata | 2026.2 | Timezone Support |
+
+---
+
+## Frontend
+
+| Package | Version | Purpose |
+|----------|----------|----------|
+| React | 19.2.5 | Frontend Framework |
+| React DOM | 19.2.5 | DOM Rendering |
+| React Router DOM | 7.15.0 | Routing |
+| Axios | 1.16.0 | API Requests |
+| Framer Motion | 12.38.0 | Animations |
+| Lucide React | 1.14.0 | Icons |
+| Tailwind CSS | 3.4.19 | Styling |
+| Vite | 8.0.10 | Build Tool |
+| PostCSS | 8.5.14 | CSS Processing |
+| Autoprefixer | 10.5.0 | CSS Prefixing |
+| ESLint | 10.2.1 | Code Linting |
+
+---
+
+# ⚙️ Quick Setup
+
+## 📌 Prerequisites
+
+| Software | Version |
+|-----------|----------|
+| Python | 3.11+ |
+| Node.js | 18+ |
+| npm | 9+ |
+
+---
+
+# 🔧 Backend Setup
 
 ```bash
 cd backend
+
 python -m venv venv
-# Windows: venv\Scripts\activate
-# Mac/Linux: source venv/bin/activate
-pip install -r requirements.txt
+
+# Windows
+venv\Scripts\activate
+
+# Mac/Linux
+source venv/bin/activate
+
+pip install django djangorestframework django-cors-headers djangorestframework-simplejwt PyGithub reportlab python-dotenv
+
 python manage.py makemigrations
 python manage.py migrate
 python manage.py createsuperuser
-python manage.py runserver
-```
 
-### Frontend
+python manage.py runserver
+````
+
+---
+
+# 💻 Frontend Setup
 
 ```bash
 cd frontend
+
 npm install
+
 npm run dev
 ```
 
-### Environment
+---
 
-Create `backend/.env`:
+# 🔐 Environment Configuration
+
+Create a `.env` file inside the backend folder:
 
 ```env
 GITHUB_TOKEN=ghp_your_token_here
-SECRET_KEY=your-secret-key
 ```
 
-Generate a GitHub token at https://github.com/settings/tokens with `repo` and `read:org` scopes.
+Generate GitHub Token:
 
-## API Endpoints
-
-| Method | Endpoint              | Description               |
-| ------ | --------------------- | ------------------------- |
-| POST   | `/api/auth/register/` | User registration         |
-| POST   | `/api/auth/login/`    | User login                |
-| POST   | `/api/scan/`          | Scan a GitHub repository  |
-| POST   | `/api/scan/batch/`    | Batch scan repositories   |
-| GET    | `/api/history/`       | Get scan history          |
-| GET    | `/api/policies/`      | List license policies     |
-| POST   | `/api/policies/update/`| Update a license policy  |
-| POST   | `/api/export-pdf/`    | Export PDF report         |
-
-## License Detection Coverage
-
-| License       | Risk    | Commercial Use |
-| ------------- | ------- | -------------- |
-| MIT           | LOW     | Allowed        |
-| Apache 2.0    | LOW     | Allowed        |
-| BSD           | LOW     | Allowed        |
-| ISC           | LOW     | Allowed        |
-| LGPL          | MEDIUM  | Library OK     |
-| MPL           | MEDIUM  | File-level copyleft |
-| GPL           | HIGH    | Must open source |
-| AGPL          | HIGH    | Network copyleft |
-| Proprietary   | HIGH    | Restricted     |
-
-## Project Structure
-
+```text
+https://github.com/settings/tokens
 ```
+
+Select:
+
+* repo
+* read:org
+
+---
+
+# 🌐 Application URLs
+
+| Service     | URL                                                        |
+| ----------- | ---------------------------------------------------------- |
+| Frontend    | [http://localhost:5173](http://localhost:5173)             |
+| Backend API | [http://localhost:8000](http://localhost:8000)             |
+| Admin Panel | [http://localhost:8000/admin](http://localhost:8000/admin) |
+
+---
+
+# 📡 API Endpoints
+
+| Method | Endpoint              | Description            |
+| ------ | --------------------- | ---------------------- |
+| POST   | `/api/scan/`          | Scan GitHub Repository |
+| GET    | `/api/history/`       | Get Scan History       |
+| POST   | `/api/export-pdf/`    | Export PDF Report      |
+| POST   | `/api/auth/register/` | User Registration      |
+| POST   | `/api/auth/login/`    | User Login             |
+| POST   | `/api/auth/logout/`   | User Logout            |
+| GET    | `/api/test/`          | Test API Connection    |
+
+---
+
+# 🛡️ License Detection Coverage
+
+| License     | Risk Level | Commercial Use         |
+| ----------- | ---------- | ---------------------- |
+| MIT         | 🟢 LOW     | ✅ Allowed              |
+| Apache 2.0  | 🟢 LOW     | ✅ Allowed              |
+| BSD         | 🟢 LOW     | ✅ Allowed              |
+| ISC         | 🟢 LOW     | ✅ Allowed              |
+| GPL         | 🔴 HIGH    | ⚠️ Must Open Source    |
+| AGPL        | 🔴 HIGH    | ⚠️ Network Copyleft    |
+| LGPL        | 🟡 MEDIUM  | ✅ Library Usage        |
+| MPL         | 🟡 MEDIUM  | ⚠️ File-Level Copyleft |
+| Proprietary | 🔴 HIGH    | ❌ Restricted           |
+| No License  | 🟡 MEDIUM  | ❌ Default Copyright    |
+
+---
+
+# 🧪 Test Repositories
+
+```text
+https://github.com/facebook/react
+→ MIT License (LOW Risk)
+
+https://github.com/torvalds/linux
+→ GPL License (HIGH Risk)
+
+https://github.com/django/django
+→ BSD License (LOW Risk)
+
+https://github.com/tensorflow/tensorflow
+→ Apache License (LOW Risk)
+```
+
+---
+
+# 📁 Project Structure
+
+```text
+license-scanner/
+│
 ├── backend/
-│   ├── scanner/           # Core scanning logic
-│   │   ├── services/      # GitHub API, PDF generation
-│   │   ├── models.py      # Scan, LicensePolicy models
-│   │   ├── views.py       # API endpoints
+│   ├── scanner/
+│   │   ├── services/
+│   │   │   ├── github_service.py
+│   │   │   └── pdf_service.py
+│   │   ├── models.py
+│   │   ├── views.py
 │   │   └── urls.py
-│   ├── accounts/          # Auth app
-│   ├── license_scanner/   # Django settings
-│   └── manage.py
+│   │
+│   ├── accounts/
+│   │   ├── views.py
+│   │   ├── serializers.py
+│   │   └── urls.py
+│   │
+│   ├── license_scanner/
+│   │   └── settings.py
+│   │
+│   ├── manage.py
+│   └── db.sqlite3
+│
 └── frontend/
     ├── src/
-    │   ├── components/    # GlassCard, ThreeScene, Layout, etc.
-    │   ├── pages/         # Dashboard, Scanner, History, Settings, etc.
-    │   ├── utils/         # API client
+    │   ├── components/
+    │   │   └── Layout.jsx
+    │   │
+    │   ├── pages/
+    │   │   ├── Dashboard.jsx
+    │   │   ├── Scanner.jsx
+    │   │   ├── History.jsx
+    │   │   └── Login.jsx
+    │   │
     │   ├── App.jsx
+    │   ├── main.jsx
     │   └── index.css
+    │
+    ├── package.json
     ├── tailwind.config.js
     └── vite.config.js
 ```
 
-## License
+---
 
-MIT
+# 🛠️ Troubleshooting
+
+| Error                    | Solution                            |
+| ------------------------ | ----------------------------------- |
+| No module named 'django' | Activate virtual environment        |
+| CORS Error               | Set `CORS_ALLOW_ALL_ORIGINS = True` |
+| 403 Forbidden            | Add `@csrf_exempt`                  |
+| Port Already in Use      | Change Port Number                  |
+| Invalid GitHub Token     | Regenerate Token                    |
+
+---
+
+# 👨‍💻 Author
+
+**Zain Kashif**
+
+---
+
+# License
+
+This project is licensed under the MIT License.
+
+```
+```

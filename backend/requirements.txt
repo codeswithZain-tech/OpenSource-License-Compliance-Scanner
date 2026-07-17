@@ -5,6 +5,3 @@ PyGithub==2.1.1
 djangorestframework-simplejwt==5.3.0
 reportlab==4.0.4
 python-dotenv==1.0.0
-gunicorn==22.0.0
-whitenoise==6.6.0
-dj-database-url==2.1.0
