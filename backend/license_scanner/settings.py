@@ -197,6 +197,16 @@ for o in CSRF_TRUSTED_ORIGINS_ENV.split(','):
         o = 'https://' + o
     if o:
         CSRF_TRUSTED_ORIGINS.append(o)
+# Auto-add Railway hostname for admin access
+if railway_host:
+    CSRF_TRUSTED_ORIGINS.append('https://' + railway_host)
+
+# Security cookies for HTTPS
+if not DEBUG:
+    CSRF_COOKIE_SECURE = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SAMESITE = 'Lax'
+    SESSION_COOKIE_SAMESITE = 'Lax'
 
 # CORS Settings
 CORS_ALLOW_ALL_ORIGINS = os.getenv('CORS_ALLOW_ALL_ORIGINS', 'False') == 'True'
