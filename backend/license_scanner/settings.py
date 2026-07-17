@@ -38,7 +38,13 @@ DEBUG = os.getenv('DEBUG', 'False') == 'True'
 # Allow configuring ALLOWED_HOSTS via environment variable (comma-separated)
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '').split(',')
 ALLOWED_HOSTS = [h.strip() for h in ALLOWED_HOSTS if h.strip()]
-if not ALLOWED_HOSTS:
+# Railway provides its hostname via RAILWAY_HOSTNAME
+railway_host = os.getenv('RAILWAY_HOSTNAME')
+if railway_host:
+    ALLOWED_HOSTS.append(railway_host)
+# Required for Railway health checks
+ALLOWED_HOSTS.append('0.0.0.0')
+if not ALLOWED_HOSTS or ALLOWED_HOSTS == ['0.0.0.0']:
     # Safe default for local dev; production should set ALLOWED_HOSTS.
     ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
 
