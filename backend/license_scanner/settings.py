@@ -190,13 +190,25 @@ else:
 
 # CSRF Settings
 CSRF_TRUSTED_ORIGINS_ENV = os.getenv('CSRF_TRUSTED_ORIGINS', 'http://localhost:5173,http://127.0.0.1:5173')
-CSRF_TRUSTED_ORIGINS = [o.strip() for o in CSRF_TRUSTED_ORIGINS_ENV.split(',') if o.strip()]
+CSRF_TRUSTED_ORIGINS = []
+for o in CSRF_TRUSTED_ORIGINS_ENV.split(','):
+    o = o.strip()
+    if o and not o.startswith(('http://', 'https://')):
+        o = 'https://' + o
+    if o:
+        CSRF_TRUSTED_ORIGINS.append(o)
 
 # CORS Settings
 CORS_ALLOW_ALL_ORIGINS = os.getenv('CORS_ALLOW_ALL_ORIGINS', 'False') == 'True'
 CORS_ALLOWED_ORIGINS_ENV = os.getenv('CORS_ALLOWED_ORIGINS', 'http://localhost:5173,http://127.0.0.1:5173')
 if not CORS_ALLOW_ALL_ORIGINS:
-    CORS_ALLOWED_ORIGINS = [o.strip() for o in CORS_ALLOWED_ORIGINS_ENV.split(',') if o.strip()]
+    CORS_ALLOWED_ORIGINS = []
+    for o in CORS_ALLOWED_ORIGINS_ENV.split(','):
+        o = o.strip()
+        if o and not o.startswith(('http://', 'https://')):
+            o = 'https://' + o
+        if o:
+            CORS_ALLOWED_ORIGINS.append(o)
 CORS_ALLOW_CREDENTIALS = True
 
 CORS_ALLOW_METHODS = [
