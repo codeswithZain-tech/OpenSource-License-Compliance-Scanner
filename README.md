@@ -57,37 +57,6 @@ SECRET_KEY=your-secret-key
 
 Generate a GitHub token at https://github.com/settings/tokens with `repo` and `read:org` scopes.
 
-## Deploy
-
-### Frontend — Vercel
-
-1. Push the repo to GitHub
-2. Go to [vercel.com/new](https://vercel.com/new), import the GitHub repository
-3. Vercel auto-detects the Vite framework; keep default settings
-4. In `vercel.json`, replace `YOUR_RAILWAY_URL` with your actual Railway backend URL
-5. Click **Deploy**
-
-### Backend — Railway
-
-1. Go to [railway.app/new](https://railway.app/new), select **Deploy from GitHub repo**
-2. Choose this repo, set **Root Directory** to `backend`
-3. Railway auto-detects Python/Django from `requirements.txt` and `Procfile`
-4. Add these environment variables in the Railway dashboard:
-
-| Variable         | Value                                                              |
-| ---------------- | ------------------------------------------------------------------ |
-| `SECRET_KEY`     | Run `python -c "import secrets; print(secrets.token_urlsafe(50))"` |
-| `GITHUB_TOKEN`   | Your GitHub personal access token                                   |
-| `CORS_ALLOWED_ORIGINS` | `https://your-vercel-app.vercel.app`                        |
-| `CSRF_TRUSTED_ORIGINS`  | `https://your-vercel-app.vercel.app`                        |
-| `ALLOWED_HOSTS`  | `.railway.app`                                                     |
-| `DEBUG`          | `False`                                                            |
-
-5. Railway will run `gunicorn` via the `Procfile` automatically
-6. Once deployed, Railway gives you a `.railway.app` URL — copy it
-7. Update `vercel.json` → set `destination` to `https://YOUR_URL.railway.app/api/$1`
-8. Redeploy the frontend on Vercel
-
 ## API Endpoints
 
 | Method | Endpoint              | Description               |
